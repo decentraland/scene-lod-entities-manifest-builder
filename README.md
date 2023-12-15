@@ -57,6 +57,8 @@ Overwriting existing manifests can be enabled by passing the `--overwrite` argum
 
 ## Alternative workflow with `.env` local file
 
+CLI arguments take priority over reading the `.env` file, so this other workflow only works if there is no CLI argument for that same setting.
+
 ### Configuring REMOTE target scene
 
 Create or modify the `.env` file with the var `REMOTE_SCENE_COORDS` specifying the target scene coordiantes. For example:
