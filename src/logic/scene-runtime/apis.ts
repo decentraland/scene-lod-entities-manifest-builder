@@ -1,7 +1,9 @@
 import { serializeCrdtMessages } from './logger'
-import { contentFetchBaseUrl, mainCrdt, sdk6FetchComponent, sdk6SceneContent } from "../sceneFetcher";
-import { writeFile } from 'fs'
+import {contentFetchBaseUrl, mainCrdt, sceneId, sdk6FetchComponent, sdk6SceneContent} from "../sceneFetcher";
+import { writeFile, mkdir } from 'fs'
 
+export const manifestFileDir = 'output-manifests'
+export const manifestFileNameEnd = '-lod-manifest.json'
 let savedManifest = false
 export const LoadableApis = {
   EnvironmentApi: {
@@ -21,12 +23,12 @@ export const LoadableApis = {
       savedManifest = true
       
       const outputJSONManifest = JSON.stringify([...serializeCrdtMessages('[msg]: ', data)], null, 2)
-      writeFile('rendereable-entities-manifest.json', outputJSONManifest,
-          err => {
-            if (err) {
-              console.log(err)
-            }
-          })
+      
+      mkdir(manifestFileDir, { recursive: true },
+            err => { if (err) console.log(err) })
+      
+      writeFile(`${manifestFileDir}/${sceneId}${manifestFileNameEnd}`, outputJSONManifest,
+          err => { if (err) console.log(err) })
       console.log(outputJSONManifest)
       return { data: [] }
     },

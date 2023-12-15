@@ -1,5 +1,8 @@
 import { IFetchComponent } from '@well-known-components/interfaces'
-import { readFileSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
+import { manifestFileDir, manifestFileNameEnd } from "./scene-runtime/apis";
+
+const OVERWRITE_EXISTENT_MANIFESTS: boolean = false
 
 export const contentFetchBaseUrl = 'https://peer.decentraland.org/content/contents/'
 const mappingsUrl = 'https://peer.decentraland.org/content/entities/active'
@@ -7,6 +10,8 @@ const mainCRDTFileName = 'main.crdt'
 export let sdk6SceneContent: any
 export let sdk6FetchComponent: any
 export let mainCrdt: any
+export let sceneId: string = 'local-scene' // will get overwritten if a remote scene is targeted
+
 export async function getGameDataFromRemoteScene(fetch: IFetchComponent, sceneCoords: string): Promise<string> {  
   // get scene id
   let fetchResponse = await fetch.fetch(mappingsUrl, {
@@ -14,8 +19,14 @@ export async function getGameDataFromRemoteScene(fetch: IFetchComponent, sceneCo
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ pointers: [sceneCoords] })
   })
-  const sceneData = (await fetchResponse.json())[0]  
-  console.log(`Fetched scene data - scene id:${sceneData.id} - sdk7? ${sceneData.metadata.runtimeVersion === '7'}`)
+  const sceneData = (await fetchResponse.json())[0]
+  sceneId = sceneData.id
+  
+  if (!OVERWRITE_EXISTENT_MANIFESTS && existsSync(`${manifestFileDir}/${sceneId}${manifestFileNameEnd}`)) {
+    throw new Error(`ABORT: ${sceneId}${manifestFileNameEnd} manifest file already exists.`)
+  }
+  
+  console.log(`Fetched scene data - scene id:${sceneId} - sdk7? ${sceneData.metadata.runtimeVersion === '7'}`)
 
   // SDK6 scenes support
   if (sceneData.metadata.runtimeVersion !== '7') {
@@ -37,7 +48,7 @@ export async function getGameDataFromRemoteScene(fetch: IFetchComponent, sceneCo
   // Get SDK7 scene main file (index.js/game.js)
   const sceneMainFileHash = sceneData.content.find(($: any) => $.file === sceneData.metadata.main)?.hash
   if (!sceneMainFileHash) {
-    throw new Error(`Cannot find scene's main asset file hash`)
+    throw new Error(`ABORT: Cannot find scene's main asset file.`)
   }
   fetchResponse = await fetch.fetch(`${contentFetchBaseUrl}${sceneMainFileHash}`)
   

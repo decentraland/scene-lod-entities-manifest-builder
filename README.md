@@ -39,12 +39,14 @@ LOCAL_SCENE_PATH=../sdk7-scene-template/bin/index.js
 
 # Running the tool locally and manually
 
-Run `npm i` (on first installation/cloning)
+Run `npm i` (on first installation/cloning).
 
-Run `npm run build` to build the tool after any modification (or first install)
+Run `npm run build` to build the tool after any modification (or first install).
 
-Run `npm run start` to run the tool
+Run `npm run start` to run the tool.
 
-When the manifest builder finishes, the output manifest file will appear in the root folder with the name `rendereable-entities-manifest.json`
+When the manifest builder finishes, the output manifest file will appear as `/output-manifests/${sceneId}-lod-manifest.json`.
 
-The `.env` file can be changed to target a different scene and then `npm run start` is needed again (no need to rebuild if there are no changes to the manifest builder sourcecode)
+The `.env` file can be changed to target a different scene and then `npm run start` is needed again (no need to rebuild if there are no changes to the manifest builder sourcecode).
+
+Since scene ids change every time a scene is deployed to the catalyst/content-servers, by having the scene id in the manifest file name, by just checking if the current target scene manifest file exists, we can avoid creating a new manifest unnecessarily (e.g. if a service passes through every LAND coordinate and runs this tool, the manifest won't be re-generated for scenes that contain more than 1 LAND).
