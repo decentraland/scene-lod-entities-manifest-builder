@@ -9,13 +9,13 @@ export async function main(program: Lifecycle.EntryPointParameters<BaseComponent
   // start ports: db, listeners, synchronizations, etc
   await startComponents()
   
-  const localPath = await components.config.getString('LOCAL_SCENE_PATH')
+  const localPath = process.env.npm_config_path ?? await components.config.getString('LOCAL_SCENE_PATH')
   if (localPath) {
-    await loadOrReload(components, 'localScene')
+    await loadOrReload(components, 'localScene', localPath)
   } else {
-    const remoteSceneCoords = await components.config.getString('REMOTE_SCENE_COORDS')
+    const remoteSceneCoords = process.env.npm_config_coords ?? await components.config.getString('REMOTE_SCENE_COORDS')
     if (remoteSceneCoords) {
-      await loadOrReload(components, 'remoteScene')
+      await loadOrReload(components, 'remoteScene', remoteSceneCoords)
     }
   }
 }

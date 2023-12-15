@@ -2,8 +2,6 @@ import { IFetchComponent } from '@well-known-components/interfaces'
 import { existsSync, readFileSync } from 'fs'
 import { manifestFileDir, manifestFileNameEnd } from "./scene-runtime/apis";
 
-const OVERWRITE_EXISTENT_MANIFESTS: boolean = false
-
 export const contentFetchBaseUrl = 'https://peer.decentraland.org/content/contents/'
 const mappingsUrl = 'https://peer.decentraland.org/content/entities/active'
 const mainCRDTFileName = 'main.crdt'
@@ -22,11 +20,11 @@ export async function getGameDataFromRemoteScene(fetch: IFetchComponent, sceneCo
   const sceneData = (await fetchResponse.json())[0]
   sceneId = sceneData.id
   
-  if (!OVERWRITE_EXISTENT_MANIFESTS && existsSync(`${manifestFileDir}/${sceneId}${manifestFileNameEnd}`)) {
+  if (!process.env.npm_config_overwrite && existsSync(`${manifestFileDir}/${sceneId}${manifestFileNameEnd}`)) {
     throw new Error(`ABORT: ${sceneId}${manifestFileNameEnd} manifest file already exists.`)
   }
   
-  console.log(`Fetched scene data - scene id:${sceneId} - sdk7? ${sceneData.metadata.runtimeVersion === '7'}`)
+  console.log(`Fetched scene data - coords: ${sceneCoords}; scene id:${sceneId}; sdk7? ${sceneData.metadata.runtimeVersion === '7'}`)
 
   // SDK6 scenes support
   if (sceneData.metadata.runtimeVersion !== '7') {
@@ -57,5 +55,9 @@ export async function getGameDataFromRemoteScene(fetch: IFetchComponent, sceneCo
 
 // Local scenes mode only supports SDK7 scenes for now
 export async function getGameDataFromLocalScene(scenePath: string): Promise<string> {
+  if (!process.env.npm_config_overwrite && existsSync(`${manifestFileDir}/${sceneId}${manifestFileNameEnd}`)) {
+    throw new Error(`ABORT: ${sceneId}${manifestFileNameEnd} manifest file already exists.`)
+  }
+  
   return readFileSync(scenePath, 'utf-8')
 }
