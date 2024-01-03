@@ -11,11 +11,18 @@ export async function main(program: Lifecycle.EntryPointParameters<BaseComponent
   
   const localPath = process.env.npm_config_path ?? await components.config.getString('LOCAL_SCENE_PATH')
   if (localPath) {
-    await loadOrReload(components, 'localScene', localPath)
+    await loadOrReload(components, 'localScene', localPath, false)
   } else {
-    const remoteSceneCoords = process.env.npm_config_coords ?? await components.config.getString('REMOTE_SCENE_COORDS')
-    if (remoteSceneCoords) {
-      await loadOrReload(components, 'remoteScene', remoteSceneCoords)
+    const sceneID = process.env.npm_config_sceneID
+    if (sceneID) {
+      await loadOrReload(components, 'remoteScene', sceneID, true)
+    }else{
+      const remoteSceneCoords = process.env.npm_config_coords ?? await components.config.getString('REMOTE_SCENE_COORDS')
+      if (remoteSceneCoords) {
+        await loadOrReload(components, 'remoteScene', remoteSceneCoords, false)
+      }
     }
+    
+
   }
 }
