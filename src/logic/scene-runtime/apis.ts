@@ -5,9 +5,25 @@ import { writeFile, mkdir } from 'fs'
 export const manifestFileDir = 'output-manifests'
 export const manifestFileNameEnd = '-lod-manifest.json'
 let savedManifest = false
+
 export const LoadableApis = {
+  
+  // Emulating old EnvironmentAPI from browser-interface/kernel at https://github.com/decentraland/unity-renderer/blob/dev/browser-interface/packages/shared/apis/host/EnvironmentAPI.ts#L29%60L77
+  // to avoid compilation errors on very old sdk6 scenes when running their eval to generate the manifest.
   EnvironmentApi: {
-    isPreviewMode: async () => ({ isPreview: false })
+    isPreviewMode: async () => ({ isPreview: false }),
+    
+    getBootstrapData: async () => ({ }),
+    
+    getPlatform: async () => ({ }),
+    
+    areUnsafeRequestAllowed: async () => ({ }),
+    
+    getCurrentRealm: async () => ({ }),
+    
+    getExplorerConfiguration: async () => ({ }),
+    
+    getDecentralandTime: async () => ({ })
   },
   EngineApi: {
     sendBatch: async () => ({ events: [] }),
