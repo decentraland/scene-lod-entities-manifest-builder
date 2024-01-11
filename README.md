@@ -1,3 +1,5 @@
+# THIS REPO IS NOW DEPRECATED, THE LATEST VERSION OF THIS TOOL HAS BEEN INTERGRATED INTO [THIS OTHER REPO](https://github.com/decentraland/PiXYZIntegration/tree/main/scene-lod-entities-manifest-builder)
+
 This LODs Manifest Builder was created based on the experimental [scene-state-server](https://github.com/decentraland/scene-state-server).
 
 Original implementation commits history can be found in [the old prototype PR](https://github.com/decentraland/scene-state-server/pull/30).
