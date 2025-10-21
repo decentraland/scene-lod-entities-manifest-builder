@@ -1,5 +1,3 @@
-# THIS REPO IS NOW DEPRECATED, THE LATEST VERSION OF THIS TOOL HAS BEEN INTERGRATED INTO [THIS OTHER REPO](https://github.com/decentraland/PiXYZIntegration/tree/main/scene-lod-entities-manifest-builder)
-
 This LODs Manifest Builder was created based on the experimental [scene-state-server](https://github.com/decentraland/scene-state-server).
 
 Original implementation commits history can be found in [the old prototype PR](https://github.com/decentraland/scene-state-server/pull/30).
@@ -49,7 +47,12 @@ npm run start --path="../sdk7-scene-template/bin/index.js"
 
 ## Output
 
-When the manifest builder finishes, the output manifest file will appear as `/output-manifests/${sceneId}-lod-manifest.json`.
+When the manifest builder finishes, the output manifest file will appear as `/output-manifests/${sceneId}-lod-manifest.json` by default.
+
+The output directory can be customized using the `--output` argument:
+```
+npm run start --coords=0,0 --output=my-custom-folder
+```
 
 By default the manifest builder doesn't overwrite a manifest that has already been built, this is done by checking the existent manifest filename with the target scene id.
 
@@ -75,6 +78,14 @@ Create or modify the `.env` file with the var `LOCAL_SCENE_PATH` specifying the 
 
 ```
 LOCAL_SCENE_PATH=../sdk7-scene-template/bin/index.js
+```
+
+### Configuring OUTPUT directory
+
+Create or modify the `.env` file with the var `OUTPUT_MANIFEST_DIR` specifying the output directory. For example:
+
+```
+OUTPUT_MANIFEST_DIR=my-custom-folder
 ```
 
 The `.env` file can be changed to target a different scene and then `npm run start` is needed again (no need to rebuild if there are no changes to the manifest builder sourcecode).

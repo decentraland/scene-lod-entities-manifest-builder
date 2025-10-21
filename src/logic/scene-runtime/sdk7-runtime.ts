@@ -1,7 +1,5 @@
 import { LoadableApis } from './apis'
 
-const sceneDebug = true
-
 type GenericRpcModule = Record<string, (...args: any) => Promise<unknown>>
 
 type SceneInterface = {
@@ -15,26 +13,26 @@ type SDK7Module = {
   runUpdate(deltaTime: number): Promise<void>
 }
 
-// TODO: are we going to provide a WS & Fetch connection for the server scene?
-export function createWsFetchRuntime(runtime: Record<string, any>) {
-  const restrictedWebSocket = () => {
-    throw new Error('No WS')
+class WebSocket {
+  constructor(url: string) {
+    this.url = url
   }
-
-  const restrictedFetch = () => {
-    throw new Error('No fetch')
-  }
-
-  Object.defineProperty(runtime, 'WebSocket', {
-    configurable: false,
-    value: restrictedWebSocket
-  })
-
-  Object.defineProperty(runtime, 'fetch', {
-    configurable: false,
-    value: restrictedFetch
-  })
+  onmessage() {}
+  send() {}
+  onclose() {}
+  onerror() {}
+  onopen() {}
+  close(_code?: number, _reason?: string) {}
+  readonly url
+  readonly readyState = 0
+  readonly CLOSED = 1
+  readonly CLOSING = 0
+  readonly CONNECTING = 0
+  readonly OPEN = 0
 }
+
+const a = new WebSocket('ws://')
+a.onmessage = () => {}
 
 export function createModuleRuntime(runtime: Record<string, any>): SDK7Module {
   const exports: Partial<SceneInterface> = {}
@@ -65,6 +63,20 @@ export function createModuleRuntime(runtime: Record<string, any>): SDK7Module {
       warning: () => {},
       error: () => {}
     }
+  })
+
+  Object.defineProperty(runtime, 'fetch', {
+    value: async (_url: string, _init: any) => {
+      return {
+        status: 200,
+        json: async () => {},
+        text: async () => ''
+      }
+    }
+  })
+
+  Object.defineProperty(runtime, 'WebSocket', {
+    value: WebSocket
   })
 
   const loadedModules: Record<string, GenericRpcModule> = {}
