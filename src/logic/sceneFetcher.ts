@@ -13,8 +13,9 @@ export async function createSceneFetcherComponent({
   config,
   fetch
 }: Pick<BaseComponents, 'config' | 'fetch'>): Promise<SceneFetcherComponent> {
-  contentFetchBaseUrl = (await config.requireString('CATALYST_URL')) + '/content/contents/'
-  const mappingsUrl = (await config.requireString('CATALYST_URL')) + '/content/entities/active'
+  const catalystUrl = process.env.npm_config_catalyst ?? await config.requireString('CATALYST_URL')
+  contentFetchBaseUrl = catalystUrl + '/content/contents/'
+  const mappingsUrl = catalystUrl + '/content/entities/active'
 
   async function getGameDataFromRemoteSceneByCoords(sceneCoords: string): Promise<string> {
     // get scene id
