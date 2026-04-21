@@ -39,6 +39,36 @@ export async function createSceneFetcherComponent({
     return await processRemoteResponse(sceneData)
   }
 
+  async function getGameDataFromWorldScene(worldName: string, sceneCoords: string): Promise<string> {
+    const worldsContentServer = process.env.npm_config_worldsserver ?? catalystUrl
+    contentFetchBaseUrl = worldsContentServer + '/contents/'
+
+    const scenesUrl = `${worldsContentServer}/world/${worldName}/scenes`
+    console.log(`Fetching world scenes from: ${scenesUrl}`)
+    const fetchResponse = await fetch.fetch(scenesUrl)
+    const responseData = await fetchResponse.json()
+    const scenes: any[] = responseData.scenes ?? responseData
+
+    // Find the scene whose parcels contain the requested coordinates
+    const scene = scenes.find((s: any) => {
+      const parcels: string[] = s.parcels ?? s.entity?.metadata?.scene?.parcels ?? []
+      return parcels.includes(sceneCoords)
+    })
+
+    if (!scene) {
+      throw new Error(`ABORT: No scene found in world "${worldName}" at coordinates ${sceneCoords}. Available parcels: ${scenes.map((s: any) => (s.parcels ?? []).join(', ')).join(' | ')}`)
+    }
+
+    const sceneData = scene.entity
+    if (!sceneData) {
+      throw new Error(`ABORT: Scene found but entity data missing for world "${worldName}" at ${sceneCoords}`)
+    }
+
+    sceneId = sceneData.id
+    console.log(`Found world scene: ${sceneId} at ${sceneCoords}`)
+    return await processRemoteResponse(sceneData)
+  }
+
   async function processRemoteResponse(sceneData: any): Promise<string> {
     if (!process.env.npm_config_overwrite && existsSync(`${manifestFileDir}/${sceneId}${manifestFileNameEnd}`)) {
       console.log(`Manifest file already exists: ${sceneId}${manifestFileNameEnd}. Skipping...`)
@@ -89,6 +119,7 @@ export async function createSceneFetcherComponent({
   return {
     getGameDataFromRemoteSceneByCoords,
     getGameDataFromRemoteSceneByID,
-    getGameDataFromLocalScene
+    getGameDataFromLocalScene,
+    getGameDataFromWorldScene
   }
 }

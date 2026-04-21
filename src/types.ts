@@ -12,4 +12,5 @@ export type SceneFetcherComponent = {
   getGameDataFromRemoteSceneByCoords(sceneCoords: string): Promise<string>
   getGameDataFromRemoteSceneByID(paramSceneId: string): Promise<string>
   getGameDataFromLocalScene(scenePath: string): Promise<string>
+  getGameDataFromWorldScene(worldName: string, sceneCoords: string): Promise<string>
 }
