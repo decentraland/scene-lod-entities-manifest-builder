@@ -57,6 +57,11 @@ jobs:
             exit 1
           fi
           echo "Generated: $GENERATED ($(stat -c%s "$GENERATED") bytes)"
+          # 958 is the GltfContainer count captured locally against the Genesis
+          # Plaza deploy linked above. After LWW dedup each (entityId, componentId)
+          # is unique, so this also equals the number of distinct 3D-model
+          # placements baked into the scene. If Genesis Plaza is intentionally
+          # redeployed, regenerate locally and update this constant.
           EXPECTED=958
           COUNT=$(jq '[.[] | select(.componentName == "core::GltfContainer")] | length' "$GENERATED")
           echo "GltfContainer count: $COUNT (expected: $EXPECTED)"
