@@ -21,3 +21,45 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
+
+  e2e:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18.20.4'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Generate crashworld manifest
+        run: |
+          mkdir -p e2e-output
+          npm run start \
+            --catalyst=https://worlds-content-server.decentraland.zone \
+            --worldsserver=https://worlds-content-server.decentraland.zone \
+            --world=crashworld.dcl.eth \
+            --coords=0,0 \
+            --overwrite \
+            --output=./e2e-output
+
+      - name: Compare against baseline
+        run: |
+          GENERATED=$(find e2e-output -name '*-lod-manifest.json' | head -1)
+          if [ -z "$GENERATED" ]; then
+            echo "::error::No manifest produced"
+            exit 1
+          fi
+          echo "Generated: $GENERATED ($(stat -c%s "$GENERATED") bytes)"
+          diff -u "test/baselines/crashworld-0,0.json" "$GENERATED"
+
+      - name: Upload generated manifest on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: crashworld-e2e-output
+          path: e2e-output/
