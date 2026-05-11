@@ -20,16 +20,23 @@ export async function main(program: Lifecycle.EntryPointParameters<BaseComponent
   if (localPath) {
     await loadOrReload(components, 'localScene', localPath, false)
   } else {
-    const sceneID = process.env.npm_config_sceneid
-    if (sceneID) {
-      await loadOrReload(components, 'remoteScene', sceneID, true)
-    }else{
+    const worldName = process.env.npm_config_world
+    if (worldName) {
       const remoteSceneCoords = process.env.npm_config_coords ?? await components.config.getString('REMOTE_SCENE_COORDS')
-      if (remoteSceneCoords) {
-        await loadOrReload(components, 'remoteScene', remoteSceneCoords, false)
+      if (!remoteSceneCoords) {
+        throw new Error('--coords is required when using --world')
+      }
+      await loadOrReload(components, 'worldScene', `${worldName}|${remoteSceneCoords}`, false)
+    } else {
+      const sceneID = process.env.npm_config_sceneid
+      if (sceneID) {
+        await loadOrReload(components, 'remoteScene', sceneID, true)
+      } else {
+        const remoteSceneCoords = process.env.npm_config_coords ?? await components.config.getString('REMOTE_SCENE_COORDS')
+        if (remoteSceneCoords) {
+          await loadOrReload(components, 'remoteScene', remoteSceneCoords, false)
+        }
       }
     }
-    
-
   }
 }

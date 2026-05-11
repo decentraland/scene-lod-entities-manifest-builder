@@ -7,6 +7,10 @@ export async function loadOrReload({ sceneFetcher }: BaseComponents, loadingType
   if (loadingType === 'localScene') {
     sourceCode = await sceneFetcher.getGameDataFromLocalScene(targetScene)
     hash = 'localScene'
+  } else if (loadingType === 'worldScene') {
+    const [worldName, sceneCoords] = targetScene.split('|')
+    sourceCode = await sceneFetcher.getGameDataFromWorldScene(worldName, sceneCoords)
+    hash = 'worldScene'
   } else {
     if(doneBySceneID){
       sourceCode = await sceneFetcher.getGameDataFromRemoteSceneByID(targetScene)
