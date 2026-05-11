@@ -1,0 +1,78 @@
+name: Test
+
+on:
+  push:
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18.20.4'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+
+  e2e:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18.20.4'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run build
+
+      # crashworld.dcl.eth hosts Genesis Plaza, deployed from:
+      # https://github.com/decentraland-scenes/Genesis-Plaza-2025/commit/30cdaffd752a02bc811dfdbd7e5aaaa4b97f595d
+      - name: Generate crashworld manifest
+        run: |
+          mkdir -p e2e-output
+          npm run start \
+            --catalyst=https://worlds-content-server.decentraland.zone \
+            --worldsserver=https://worlds-content-server.decentraland.zone \
+            --world=crashworld.dcl.eth \
+            --coords=0,0 \
+            --overwrite \
+            --output=./e2e-output
+
+      - name: Assert GltfContainer count
+        run: |
+          GENERATED=$(find e2e-output -name '*-lod-manifest.json' | head -1)
+          if [ -z "$GENERATED" ]; then
+            echo "::error::No manifest produced"
+            exit 1
+          fi
+          echo "Generated: $GENERATED ($(stat -c%s "$GENERATED") bytes)"
+          # 958 is the GltfContainer count captured locally against the Genesis
+          # Plaza deploy linked above. After LWW dedup each (entityId, componentId)
+          # is unique, so this also equals the number of distinct 3D-model
+          # placements baked into the scene. If Genesis Plaza is intentionally
+          # redeployed, regenerate locally and update this constant.
+          EXPECTED=958
+          COUNT=$(jq '[.[] | select(.componentName == "core::GltfContainer")] | length' "$GENERATED")
+          echo "GltfContainer count: $COUNT (expected: $EXPECTED)"
+          if [ "$COUNT" -ne "$EXPECTED" ]; then
+            echo "::error::Expected $EXPECTED GltfContainer entries, got $COUNT"
+            exit 1
+          fi
+
+      - name: Upload generated manifest on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: crashworld-e2e-output
+          path: e2e-output/
