@@ -66,10 +66,15 @@ export function createModuleRuntime(runtime: Record<string, any>): SDK7Module {
   })
 
   Object.defineProperty(runtime, 'fetch', {
+    // Stubbed to keep the manifest builder offline and deterministic.
+    // `ok: true` is required so scenes that gate on `response.ok` (e.g. Google
+    // Sheets feature-flag fetches) take their default/no-data branch and still
+    // spawn static content into the manifest instead of throwing.
     value: async (_url: string, _init: any) => {
       return {
+        ok: true,
         status: 200,
-        json: async () => {},
+        json: async () => ({}),
         text: async () => ''
       }
     }
