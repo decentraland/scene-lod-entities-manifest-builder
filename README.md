@@ -4,8 +4,8 @@ Original implementation commits history can be found in [the old prototype PR](h
 
 # IMPORTANT
 
-To be able to use the tool, `node` version `v18.14.2` is mandatory (newer or older versions may not work).
-https://nodejs.org/download/release/v18.14.2/
+To be able to use the tool, `node` version `v24` is required.
+https://nodejs.org/download/release/latest-v24.x/
 
 ## What this tool does
 
