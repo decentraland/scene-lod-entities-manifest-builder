@@ -18,6 +18,12 @@ const allowedComponentIds = new Set<number>([
   VisibilityComponent.componentId,
 ])
 
+let excludedGltfSrcs: Set<string> = new Set()
+
+export function setExcludedGltfSrcs(srcs: string[]) {
+  excludedGltfSrcs = new Set(srcs.map((s) => s.trim()).filter(Boolean))
+}
+
 export function* serializeCrdtMessages(prefix: string, data: Uint8Array) {
   const buffer = new ReadWriteByteBuffer(data)
   let message: CrdtMessage | null
@@ -40,7 +46,23 @@ export function* serializeCrdtMessages(prefix: string, data: Uint8Array) {
     }
   }
 
+  // Identify entities whose final GltfContainer.src is on the exclusion list,
+  // and drop every component for those entities from the manifest output.
+  const excludedEntityIds = new Set<number>()
+  if (excludedGltfSrcs.size > 0) {
+    for (const msg of latest.values()) {
+      if (msg.componentId !== GltfContainer.componentId || !msg.data) continue
+      try {
+        const value = GltfContainer.schema.deserialize(new ReadWriteByteBuffer(msg.data)) as { src?: string }
+        if (value?.src && excludedGltfSrcs.has(value.src)) {
+          excludedEntityIds.add(msg.entityId as number)
+        }
+      } catch (_) {}
+    }
+  }
+
   for (const msg of latest.values()) {
+    if (excludedEntityIds.has(msg.entityId as number)) continue
     try {
       const c = engine.getComponentOrNull(msg.componentId)
       yield {

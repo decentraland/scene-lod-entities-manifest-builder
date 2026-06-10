@@ -3,7 +3,7 @@ import * as components from '@dcl/ecs/dist-cjs/components'
 import { ReadWriteByteBuffer } from '@dcl/ecs/dist-cjs/serialization/ByteBuffer'
 import { PutComponentOperation, AppendValueOperation } from '@dcl/ecs/dist-cjs/serialization/crdt'
 import { Entity } from '@dcl/ecs/dist-cjs/engine/entity'
-import { serializeCrdtMessages } from './logger'
+import { serializeCrdtMessages, setExcludedGltfSrcs } from './logger'
 
 const Transform = components.Transform(engine)
 const GltfContainer = components.GltfContainer(engine)
@@ -129,5 +129,68 @@ describe('serializeCrdtMessages (LWW dedup)', () => {
     const out = [...serializeCrdtMessages('', buf)]
 
     expect(out).toHaveLength(0)
+  })
+})
+
+describe('serializeCrdtMessages (GltfContainer.src exclusion)', () => {
+  afterEach(() => {
+    setExcludedGltfSrcs([])
+  })
+
+  it('drops every component for entities whose GltfContainer.src is on the exclusion list', () => {
+    setExcludedGltfSrcs(['assets/excluded.glb'])
+
+    const excluded = serializeComponent(GltfContainer, { src: 'assets/excluded.glb' })
+    const kept = serializeComponent(GltfContainer, { src: 'assets/kept.glb' })
+    const transform = serializeComponent(Transform, {
+      position: { x: 0, y: 0, z: 0 },
+      rotation: { x: 0, y: 0, z: 0, w: 1 },
+      scale: { x: 1, y: 1, z: 1 },
+      parent: 0 as Entity,
+    })
+    const buf = buildBuffer([
+      { kind: 'put', entityId: 10, componentId: GltfContainer.componentId, timestamp: 1, data: excluded },
+      { kind: 'put', entityId: 10, componentId: Transform.componentId, timestamp: 1, data: transform },
+      { kind: 'put', entityId: 20, componentId: GltfContainer.componentId, timestamp: 1, data: kept },
+      { kind: 'put', entityId: 20, componentId: Transform.componentId, timestamp: 1, data: transform },
+    ])
+
+    const out = [...serializeCrdtMessages('', buf)]
+
+    expect(out.map((o) => o.entityId).sort()).toEqual([20, 20])
+  })
+
+  it('exclusion respects LWW: only the final src counts', () => {
+    setExcludedGltfSrcs(['assets/excluded.glb'])
+
+    const excluded = serializeComponent(GltfContainer, { src: 'assets/excluded.glb' })
+    const kept = serializeComponent(GltfContainer, { src: 'assets/kept.glb' })
+    const buf = buildBuffer([
+      // entity 30 ends with kept.glb -> should remain
+      { kind: 'put', entityId: 30, componentId: GltfContainer.componentId, timestamp: 1, data: excluded },
+      { kind: 'put', entityId: 30, componentId: GltfContainer.componentId, timestamp: 2, data: kept },
+      // entity 40 ends with excluded.glb -> should be dropped
+      { kind: 'put', entityId: 40, componentId: GltfContainer.componentId, timestamp: 1, data: kept },
+      { kind: 'put', entityId: 40, componentId: GltfContainer.componentId, timestamp: 2, data: excluded },
+    ])
+
+    const out = [...serializeCrdtMessages('', buf)]
+
+    expect(out).toHaveLength(1)
+    expect(out[0].entityId).toBe(30)
+    expect(out[0].data).toMatchObject({ src: 'assets/kept.glb' })
+  })
+
+  it('emits everything when the exclusion list is empty', () => {
+    setExcludedGltfSrcs([])
+
+    const data = serializeComponent(GltfContainer, { src: 'assets/anything.glb' })
+    const buf = buildBuffer([
+      { kind: 'put', entityId: 50, componentId: GltfContainer.componentId, timestamp: 1, data },
+    ])
+
+    const out = [...serializeCrdtMessages('', buf)]
+
+    expect(out).toHaveLength(1)
   })
 })
