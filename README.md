@@ -89,21 +89,3 @@ OUTPUT_MANIFEST_DIR=my-custom-folder
 ```
 
 The `.env` file can be changed to target a different scene and then `npm run start` is needed again (no need to rebuild if there are no changes to the manifest builder sourcecode).
-
-### Excluding GltfContainer sources
-
-Some scenes set a `GltfContainer.src` whose value depends on async work that the sandbox can't run faithfully (e.g. a network fetch that picks between "live" and "next" variants). The resulting manifest then bakes a state that conflicts with what the live scene produces at runtime, causing visible overlap.
-
-As a stopgap, you can pass a comma-separated list of GLB paths whose owning entities should be omitted from the manifest output:
-
-```
-npm run start --path="..." --excluded-srcs="assets/models/out/models/next_live_events.glb,assets/models/out/models/live_events.glb"
-```
-
-Or via `.env`:
-
-```
-EXCLUDED_GLTF_SRCS=assets/models/out/models/next_live_events.glb,assets/models/out/models/live_events.glb
-```
-
-Every component on an entity whose final `GltfContainer.src` matches an entry on the list is dropped from the manifest.

@@ -18,11 +18,17 @@ const allowedComponentIds = new Set<number>([
   VisibilityComponent.componentId,
 ])
 
-let excludedGltfSrcs: Set<string> = new Set()
-
-export function setExcludedGltfSrcs(srcs: string[]) {
-  excludedGltfSrcs = new Set(srcs.map((s) => s.trim()).filter(Boolean))
-}
+// Stopgap exclusion list: entities whose final GltfContainer.src is one of these
+// paths are dropped from the manifest output (every component on the entity is
+// omitted). The sandbox can't faithfully run the async work that decides which
+// of these GLBs ends up attached, so whatever it bakes conflicts with the live
+// runtime and produces a visible overlap.
+//
+// This shouldn't live here long-term — see decentraland/lod-generator-unity#43.
+const EXCLUDED_GLTF_SRCS = new Set<string>([
+  'assets/models/out/models/live_events.glb',
+  'assets/models/out/models/next_live_events.glb',
+])
 
 export function* serializeCrdtMessages(prefix: string, data: Uint8Array) {
   const buffer = new ReadWriteByteBuffer(data)
@@ -46,19 +52,15 @@ export function* serializeCrdtMessages(prefix: string, data: Uint8Array) {
     }
   }
 
-  // Identify entities whose final GltfContainer.src is on the exclusion list,
-  // and drop every component for those entities from the manifest output.
   const excludedEntityIds = new Set<number>()
-  if (excludedGltfSrcs.size > 0) {
-    for (const msg of latest.values()) {
-      if (msg.componentId !== GltfContainer.componentId || !msg.data) continue
-      try {
-        const value = GltfContainer.schema.deserialize(new ReadWriteByteBuffer(msg.data)) as { src?: string }
-        if (value?.src && excludedGltfSrcs.has(value.src)) {
-          excludedEntityIds.add(msg.entityId as number)
-        }
-      } catch (_) {}
-    }
+  for (const msg of latest.values()) {
+    if (msg.componentId !== GltfContainer.componentId || !msg.data) continue
+    try {
+      const value = GltfContainer.schema.deserialize(new ReadWriteByteBuffer(msg.data)) as { src?: string }
+      if (value?.src && EXCLUDED_GLTF_SRCS.has(value.src)) {
+        excludedEntityIds.add(msg.entityId as number)
+      }
+    } catch (_) {}
   }
 
   for (const msg of latest.values()) {
