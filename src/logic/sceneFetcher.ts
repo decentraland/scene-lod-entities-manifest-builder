@@ -4,8 +4,8 @@ import { BaseComponents, SceneFetcherComponent } from '../types'
 
 export let contentFetchBaseUrl: string | undefined = undefined
 const mainCRDTFileName = 'main.crdt'
-export let sdk6SceneContent: any
-export let sdk6FetchComponent: any
+export let sceneContent: any
+export let sceneFetchComponent: any
 export let mainCrdt: any
 export let sceneId: string = 'local-scene' // will get overwritten if a remote scene is targeted
 
@@ -77,12 +77,11 @@ export async function createSceneFetcherComponent({
 
     console.log(`Fetched scene data scene id:${sceneId}; sdk7? ${sceneData.metadata.runtimeVersion === '7'}`)
 
+    sceneContent = sceneData.content
+    sceneFetchComponent = fetch
+
     // SDK6 scenes support
     if (sceneData.metadata.runtimeVersion !== '7') {
-      // sdk6 scene content will be later read by the adaption-layer internally using the Runtime.readFile API
-      sdk6SceneContent = sceneData.content
-      sdk6FetchComponent = fetch
-
       const fetchResponse = await fetch.fetch(
         `https://renderer-artifacts.decentraland.org/sdk6-adaption-layer/main/index.js`
       )
