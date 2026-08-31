@@ -1,5 +1,5 @@
 import { serializeCrdtMessages } from './logger'
-import { contentFetchBaseUrl, mainCrdt, sceneId, sdk6FetchComponent, sdk6SceneContent } from '../sceneFetcher'
+import { contentFetchBaseUrl, mainCrdt, sceneId, sceneFetchComponent, sceneContent } from '../sceneFetcher'
 import { writeFile, mkdir } from 'fs'
 import {CameraMode, engine, Entity, PutComponentOperation, Transform, UiCanvasInformation} from '@dcl/ecs/dist-cjs'
 import { ReadWriteByteBuffer } from '@dcl/ecs/dist-cjs/serialization/ByteBuffer'
@@ -200,10 +200,14 @@ export const LoadableApis: LoadableApis & { AdaptationLayerHelper: unknown } = {
     getRealm: async () => {
       return { realmInfo: undefined }
     },
-    // readFile is needed for the adaption-layer bridge to run SDK6 scenes as an SDK7 scene
+    // readFile serves the scene's own content files: the adaption-layer bridge uses it to run
+    // SDK6 scenes, and SDK7 scenes use it to load configs and composites at runtime.
     readFile: async ({ fileName }: { fileName: string }) => {
-      const fileHash = sdk6SceneContent.find(({ file }: any) => file === fileName).hash
-      const res = await sdk6FetchComponent.fetch(`${contentFetchBaseUrl}${fileHash}`)
+      const fileHash = sceneContent?.find(({ file }: any) => file === fileName)?.hash
+      if (!fileHash) {
+        throw new Error(`readFile: "${fileName}" not found in scene content`)
+      }
+      const res = await sceneFetchComponent.fetch(`${contentFetchBaseUrl}${fileHash}`)
       return {
         content: await res.arrayBuffer(),
         hash: fileHash
