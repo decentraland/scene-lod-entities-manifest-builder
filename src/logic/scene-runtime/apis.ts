@@ -157,7 +157,9 @@ export const LoadableApis: LoadableApis & { AdaptationLayerHelper: unknown } = {
       //console.log(outputJSONManifest)
       return { data: [] }
     },
-    isServer: async () => ({ isServer: true }),
+    // Answer as a client: scenes with a server/client split (e.g. Genesis Plaza) only spawn
+    // their visual content — the GltfContainers this manifest exists to capture — on clients.
+    isServer: async () => ({ isServer: false }),
     // Enum types that the compiler thinks we need for the EngineAPI.
     ECS6ComponentAttachToAvatar_AttachToAvatarAnchorPointId: {} as any,
     ECS6ComponentCameraModeArea_CameraMode: {} as any,
