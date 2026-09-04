@@ -131,3 +131,47 @@ describe('serializeCrdtMessages (LWW dedup)', () => {
     expect(out).toHaveLength(0)
   })
 })
+
+describe('serializeCrdtMessages (hardcoded GltfContainer.src exclusion)', () => {
+  it('drops every component for entities whose final GltfContainer.src matches the hardcoded list', () => {
+    const excludedSrc = serializeComponent(GltfContainer, { src: 'assets/models/out/models/next_live_events.glb' })
+    const otherExcluded = serializeComponent(GltfContainer, { src: 'assets/models/out/models/live_events.glb' })
+    const kept = serializeComponent(GltfContainer, { src: 'assets/models/out/models/something_else.glb' })
+    const transform = serializeComponent(Transform, {
+      position: { x: 0, y: 0, z: 0 },
+      rotation: { x: 0, y: 0, z: 0, w: 1 },
+      scale: { x: 1, y: 1, z: 1 },
+      parent: 0 as Entity,
+    })
+    const buf = buildBuffer([
+      { kind: 'put', entityId: 10, componentId: GltfContainer.componentId, timestamp: 1, data: excludedSrc },
+      { kind: 'put', entityId: 10, componentId: Transform.componentId, timestamp: 1, data: transform },
+      { kind: 'put', entityId: 11, componentId: GltfContainer.componentId, timestamp: 1, data: otherExcluded },
+      { kind: 'put', entityId: 11, componentId: Transform.componentId, timestamp: 1, data: transform },
+      { kind: 'put', entityId: 20, componentId: GltfContainer.componentId, timestamp: 1, data: kept },
+      { kind: 'put', entityId: 20, componentId: Transform.componentId, timestamp: 1, data: transform },
+    ])
+
+    const out = [...serializeCrdtMessages('', buf)]
+
+    expect(out.map((o) => o.entityId).sort()).toEqual([20, 20])
+  })
+
+  it('exclusion respects LWW: only the final src is checked against the hardcoded list', () => {
+    const excludedSrc = serializeComponent(GltfContainer, { src: 'assets/models/out/models/next_live_events.glb' })
+    const kept = serializeComponent(GltfContainer, { src: 'assets/models/out/models/something_else.glb' })
+    const buf = buildBuffer([
+      // entity 30 ends with a non-excluded src -> should remain
+      { kind: 'put', entityId: 30, componentId: GltfContainer.componentId, timestamp: 1, data: excludedSrc },
+      { kind: 'put', entityId: 30, componentId: GltfContainer.componentId, timestamp: 2, data: kept },
+      // entity 40 ends with an excluded src -> should be dropped
+      { kind: 'put', entityId: 40, componentId: GltfContainer.componentId, timestamp: 1, data: kept },
+      { kind: 'put', entityId: 40, componentId: GltfContainer.componentId, timestamp: 2, data: excludedSrc },
+    ])
+
+    const out = [...serializeCrdtMessages('', buf)]
+
+    expect(out).toHaveLength(1)
+    expect(out[0].entityId).toBe(30)
+  })
+})
